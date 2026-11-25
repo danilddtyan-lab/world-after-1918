@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Исторический квест для 10–11 классов о мире после Первой мировой войны">
+<title>Мир после Первой мировой войны</title>
+<style>
+:root{color-scheme:dark;--bg:#141e1d;--panel:#202d2a;--line:#52635c;--paper:#f4ead7;--muted:#c4cabc;--gold:#ebc483;--green:#b9e3b2;--red:#ffd0b8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--paper);font:1rem/1.55 system-ui,sans-serif}button,a{color:inherit}button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-visible,a:focus-visible{outline:3px solid white;outline-offset:4px}
+.shell{max-width:1140px;margin:auto;padding:0 28px}header{border-bottom:1px solid var(--line)}.top{display:flex;justify-content:space-between;align-items:center;gap:1rem;min-height:64px}.brand{font-weight:750}.tag,.eyebrow{color:var(--gold);font:700 .9rem/1.5 system-ui;letter-spacing:.07em}.tag{letter-spacing:0}
+.hero{min-height:390px;display:grid;align-items:center;padding:55px 0 42px;background:radial-gradient(ellipse at 82% 42%,#334137,transparent 56%)}h1,h2{font-family:Georgia,serif;font-weight:500;line-height:1.08;margin:.25em 0}h1{font-size:clamp(2.65rem,7vw,5.3rem);max-width:900px;text-wrap:balance}h2{font-size:clamp(1.6rem,3vw,2.4rem)}p{margin:.7em 0}.hero p{max-width:650px;color:var(--muted);font-size:1.1rem}.button{border:1px solid var(--line);border-radius:7px;background:transparent;padding:.65rem 1rem;min-height:44px}.primary{background:var(--gold);color:#222419;border-color:transparent;font-weight:750}.layout{display:grid;grid-template-columns:270px 1fr;gap:24px;padding-top:25px;padding-bottom:35px}.box{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:clamp(16px,3vw,28px)}aside{align-self:start}aside h2{font-size:1.4rem}progress{width:100%;accent-color:var(--gold)}.muted{color:var(--muted)}nav{display:grid;gap:7px;margin:16px 0}nav button,.answer{text-align:left}.step{display:flex;justify-content:space-between;gap:10px}.active,.answer:hover{border-color:var(--gold)}.answers{display:grid;gap:9px;margin:1.25rem 0}.answer{background:#263631}.good{border-color:var(--green);color:var(--green)}.bad{border-color:var(--red);color:var(--red)}.chosen{border-color:var(--gold)}.toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.feedback{padding:12px 15px;border-left:3px solid var(--gold);background:#192420;margin:14px 0}.feedback:empty{display:none}footer{padding-bottom:35px}summary{cursor:pointer;color:var(--gold)}a{text-underline-offset:.2em}.intro-list{padding-left:1.3rem}.intro-list li{margin:.5rem 0}[hidden]{display:none!important}
+@media(max-width:730px){.layout{grid-template-columns:1fr}.shell{padding-left:16px;padding-right:16px}.hero{min-height:0;padding:34px 0}.top{min-height:54px}}
+</style>
+<header><div class="shell top"><span class="brand">Исторический квест</span><span class="tag">10–11 классы</span></div></header>
+<section class="hero"><div class="shell"><div class="eyebrow">1918–1923</div><h1>Мир после Первой мировой войны</h1><p>Новые границы и конфликты. Проследите путь от перемирия до Лозаннского договора и выясните, как решения дипломатов изменили карту Европы и Ближнего Востока.</p><button class="button primary" id="start">Начать квест</button></div></section>
+<main class="shell layout" id="quest">
+<aside class="box"><h2>Маршрут</h2><label for="progress" id="counter">Выполнено 0 из 30</label><progress id="progress" max="30" value="0"></progress><nav id="route" aria-label="Этапы квеста"></nav><button id="result" class="button" hidden>Итоги квеста</button></aside>
+<section class="box" id="screen" aria-label="Задание"></section>
+</main>
+<footer class="shell"><details class="box"><summary>Источники и цель квеста</summary><p>Тема выбрана потому, что несколько мирных договоров легко перепутать, а границы менялись и на переговорах, и вследствие новых войн. Цель квеста — связать договоры с государствами, территориями и последствиями.</p><ul id="sources"></ul></details></footer>
+<script>
+'use strict';
+const sources = [
+ ['Парижская конференция и Версальский договор — Госдепартамент США','https://history.state.gov/milestones/1914-1920/paris-peace'],
+ ['Версальский договор и Устав Лиги Наций — дипломатический архив США','https://history.state.gov/historicaldocuments/frus1919Parisv13/ch1'],
+ ['Договоры Парижской конференции — дипломатический архив США','https://history.state.gov/historicaldocuments/frus1919Parisv13/ch5'],
+ ['Лига Наций — архив ООН в Женеве','https://www.ungeneva.org/en/about/league-of-nations/overview'],
+ ['Польша и её границы — дипломатический архив США','https://history.state.gov/historicaldocuments/frus1919Parisv13/ch29'],
+ ['Севр и Лозанна — дипломатический архив США','https://history.state.gov/historicaldocuments/frus1919Parisv13/ch10subch1'],
+ ['Территориальные изменения Румынии — Библиотека Конгресса США','https://tile.loc.gov/storage-services/master/frd/frdcstdy/ro/romaniacountryst00bach_0/romaniacountryst00bach_0.pdf']
+];
+const pick = (prompt, options, key, note, source) => ({prompt, options, key, note, source, type:'Выбор ответа'});
+const claim = (prompt, yes, note, source) => ({...pick(prompt,['Верно','Неверно'],yes?0:1,note,source),type:'Верно или неверно'});
+const order = (prompt, options, key, note, source) => ({prompt,options,key,note,source,type:'Хронология'});
+const multiple = (prompt,options,key,note,source) => ({prompt,options,key,note,source,type:'Несколько ответов'});
+const stages = [
+ ['От перемирия к миру','Разберитесь, кто и зачем собрался на мирную конференцию.',[
+ pick('В каком году открылась Парижская мирная конференция?',['1918','1919','1920'],1,'Конференция открылась в январе 1919 года, после перемирия в ноябре 1918 года.',0),
+ claim('Представители советского правительства России участвовали в Парижской мирной конференции.',false,'Союзники не признали советское правительство и не пригласили его делегацию.',0),
+ multiple('Выберите все страны, входившие в «Большую четвёрку».',['Франция','Германия','США','Великобритания','Италия'],[0,2,3,4],'Ход переговоров определяли представители Франции, Великобритании, США и Италии.',0),
+ pick('Кто из лидеров особенно настаивал на создании Лиги Наций?',['Жорж Клемансо','Витторио Орландо','Вудро Вильсон'],2,'Президент США Вудро Вильсон считал международное сотрудничество способом предотвращения новых войн.',0),
+ order('Расположите события от раннего к позднему.',['Подписание Версальского договора','Компьенское перемирие','Открытие Парижской конференции'],[1,2,0],'Перемирие подписали 11 ноября 1918 года, конференция открылась в январе, а договор подписали 28 июня 1919 года.',0)
+ ]],
+ ['Условия Версаля','Прочитайте условия мира с Германией и различите их последствия.',[
+ pick('С какой страной союзники заключили Версальский мир?',['С Австрией','С Болгарией','С Германией'],2,'Версальский договор определял условия мира с Германией. С другими побеждёнными государствами заключали отдельные договоры.',2),
+ multiple('Какие положения относились к Версальскому договору?',['Ограничение германских вооружённых сил','Возвращение Эльзаса и Лотарингии Франции','Включение Австрии в Германию','Устав Лиги Наций'],[0,1,3],'Договор ограничивал германские вооружённые силы, возвращал Франции Эльзас и Лотарингию и включал Устав Лиги Наций.',1),
+ pick('Как называются выплаты в возмещение ущерба от войны?',['Репарации','Мандаты','Плебисциты'],0,'Репарации — возмещение причинённого войной ущерба. Версальский договор закрепил обязанность Германии по выплатам.',1),
+ claim('Германия сохранила свои довоенные заморские владения.',false,'Германия отказалась от прав на свои заморские владения. Их дальнейшее управление оформлялось в том числе через мандаты.',1),
+ pick('Какой статус получил Данциг в послевоенном устройстве?',['Столица Польши','Вольный город под защитой Лиги Наций','Территория под управлением Франции'],1,'Данциг, современный Гданьск, стал Вольным городом. Лига Наций осуществляла надзор за его конституцией.',3)
+ ]],
+ ['После распада Австро-Венгрии','Сопоставьте договоры и изменения в Центральной Европе.',[
+ pick('Какой договор союзники заключили с Австрией?',['Сен-Жерменский','Трианонский','Нёйиский'],0,'Сен-Жерменский договор с Австрией подписали 10 сентября 1919 года.',2),
+ pick('Какой договор определял послевоенные границы Венгрии?',['Версальский','Трианонский','Севрский'],1,'Трианонский договор с Венгрией подписали 4 июня 1920 года.',2),
+ pick('Между какими государствами новая граница оставила Трансильванию на румынской стороне?',['Австрией и Италией','Германией и Польшей','Венгрией и Румынией'],2,'Трианонский договор закрепил переход Трансильвании к Румынии.',6),
+ claim('Нёйиский договор был заключён с Болгарией.',true,'Нёйиский договор с Болгарией подписали 27 ноября 1919 года.',2),
+ order('Расположите договоры в порядке подписания.',['Трианонский','Нёйиский','Сен-Жерменский'],[2,1,0],'Сен-Жермен: сентябрь 1919 года. Нёйи: ноябрь 1919 года. Трианон: июнь 1920 года.',2)
+ ]],
+ ['Польша и восточная граница','Отличите решения Парижской конференции от итогов войны на востоке.',[
+ pick('Какой договор закрепил мир после советско-польской войны?',['Версальский','Рижский','Лозаннский'],1,'Рижский мир подписали в марте 1921 года. Он определил восточную границу Польши в результате переговоров после войны.',4),
+ multiple('Выберите стороны окончательного Рижского мирного договора 1921 года.',['Польша','Франция','Советская Россия','Советская Украина'],[0,2,3],'Договор заключили Польша, РСФСР и Украинская ССР.',4),
+ claim('Парижские договорённости и Рижский мир относились к разным участкам польских границ.',true,'Версаль регулировал изменение границы между Германией и Польшей, а Рижский мир закрепил восточную границу Польши.',4),
+ pick('Почему даты 1920 и 1921 встречаются рядом в истории Рижского мира?',['В 1920 подписали предварительный договор, в 1921 — окончательный мир','Оба года обозначают подписание одного документа','В 1920 мир подписали в Париже, в 1921 — в Берлине'],0,'Предварительные условия мира и перемирия подписали в октябре 1920 года, окончательный договор — в марте 1921 года.',4),
+ order('Соберите хронологию урегулирования.',['Окончательный Рижский мир','Версальский договор','Предварительные условия мира в Риге'],[1,2,0],'Версаль — 1919 год, предварительный договор — 1920 год, окончательный Рижский мир — 1921 год.',4)
+ ]],
+ ['От Севра к Лозанне','Проследите, как изменились условия мира на Ближнем Востоке.',[
+ pick('С каким государством союзники подписали Севрский договор в 1920 году?',['С Османской империей','С Венгрией','С Болгарией'],0,'Севрский договор был подписан с Османской империей в августе 1920 года.',2),
+ claim('Севрский мирный договор вступил в силу.',false,'Севрский договор не был ратифицирован и не вступил в силу. Новое урегулирование оформил Лозаннский договор.',2),
+ pick('Какой договор закрепил новое урегулирование с Турцией в 1923 году?',['Сен-Жерменский','Лозаннский','Нёйиский'],1,'Лозаннский мирный договор подписали 24 июля 1923 года.',5),
+ pick('Как изменился статус Анатолии по Лозаннскому договору?',['Её передали под управление Лиги Наций','Её включили в состав Греции','Вся Анатолия осталась в пределах Турции'],2,'Лозаннское урегулирование сохранило Анатолию в границах Турции.',5),
+ order('Что произошло раньше? Начните с самого раннего договора.',['Лозаннский договор','Севрский договор','Версальский договор'],[2,1,0],'Версаль подписали в 1919 году, Севр — в 1920 году, Лозанну — в 1923 году.',5)
+ ]],
+ ['Лига Наций и итоги','Оцените возможности и ограничения нового международного порядка.',[
+ pick('Какую задачу ставила перед собой Лига Наций?',['Установить единую валюту','Поддерживать мир и развивать сотрудничество','Установить одинаковые границы для всех стран'],1,'Устав Лиги связывал сохранение мира с международным сотрудничеством и обязательствами её членов.',3),
+ claim('США вошли в Лигу Наций.',false,'Сенат США не одобрил ратификацию Версальского договора. Соединённые Штаты так и не стали членом Лиги.',0),
+ multiple('Выберите территории, связанные с особыми полномочиями Лиги Наций.',['Саар','Трансильвания','Вольный город Данциг'],[0,2],'Лига управляла Сааром до плебисцита и осуществляла надзор за конституцией Вольного города Данцига.',3),
+ pick('Как назывался порядок управления рядом бывших германских и османских территорий под надзором Лиги?',['Мандатная система','Система репараций','Таможенный союз'],0,'Статья 22 Устава Лиги предусматривала передачу управления такими территориями державам-мандатариям.',1),
+ pick('Какой вывод лучше всего подтверждают примеры Польши и Турции?',['Все границы определил Версальский договор','Границы определяли только голосованием населения','Новые границы складывались через договоры и продолжавшиеся конфликты'],2,'Рижский договор завершил советско-польскую войну, а Лозаннский договор отразил изменение условий после конфликта вокруг Севрского урегулирования.',5)
+ ]]
+];
+const key = 'world-after-1918-v1';
+const elements = Object.fromEntries(['start','quest','screen','route','counter','progress','result','sources'].map(id=>[id,document.getElementById(id)]));
+let state = {stage:0,index:0,answers:{},started:false,finished:false};
+try { const saved = JSON.parse(localStorage.getItem(key)); if (saved && saved.answers) state = saved; } catch {}
+let selection = [];
+const total = stages.reduce((sum, stage)=>sum+stage[2].length,0);
+const answered = () => Object.keys(state.answers).length;
+const questionId = () => state.stage+'-'+state.index;
+const save = () => { try {localStorage.setItem(key,JSON.stringify(state));} catch {} };
+const link = (source) => '<a href="'+sources[source][1]+'">'+sources[source][0]+'</a>';
+elements.sources.innerHTML = sources.map((_,i)=>'<li>'+link(i)+'</li>').join('');
+function button(label, action, className='button') {
+ const item = document.createElement('button');
+ item.type = 'button';
+ item.className = className;
+ item.textContent = label;
+ item.addEventListener('click', action);
+ return item;
+}
+function update() {
+ elements.counter.textContent = 'Выполнено '+answered()+' из '+total;
+ elements.progress.value = answered();
+ elements.start.textContent = state.finished ? 'Посмотреть итоги' : state.started ? 'Продолжить квест' : 'Начать квест';
+ elements.result.hidden = answered() !== total;
+ elements.route.replaceChildren(...stages.map(([name,,questions],i)=>{
+   const count = questions.filter((_,j)=>state.answers[i+'-'+j]).length;
+   const item = button((i+1)+'. '+name+' · '+count+'/'+questions.length,()=>openStage(i), 'button'+(state.started&&!state.finished&&state.stage===i?' active':''));
+   if(state.started&&!state.finished&&state.stage===i) item.setAttribute('aria-current','step');
+   return item;
+ }));
+}
+function show(focus=false) {
+ update();
+ if (!state.started) {
+   elements.screen.innerHTML = '<div class="eyebrow">30 заданий</div><h2 tabindex="-1">Как проходить квест</h2><p>Выберите этап и отвечайте на вопросы. После проверки появится объяснение и ссылка на источник.</p><p class="muted">За правильный ответ начисляется один балл. Можно возвращаться к любому этапу. Прогресс сохраняется в этом браузере.</p>';
+ } else if (state.finished) {
+   const score = Object.values(state.answers).filter(answer=>answer.correct).length;
+   elements.screen.innerHTML = '<div class="eyebrow">Квест завершён</div><h2 tabindex="-1">'+score+' из '+total+' баллов</h2><p>Послевоенный порядок складывался несколько лет. Версаль задал условия мира с Германией, другие договоры определили новые границы, а Лига Наций стала площадкой для сотрудничества. Рижский и Лозаннский договоры показывают, что некоторые конфликты продолжались после 1918 года.</p><ul class="intro-list">'+stages.map(([name,,qs],i)=>'<li>'+name+' · '+qs.filter((_,j)=>state.answers[i+'-'+j]?.correct).length+' из '+qs.length+'</li>').join('')+'</ul>';
+   elements.screen.append(button('Пройти заново',()=>{if(confirm('Начать заново? Текущий результат будет сброшен.')){state={stage:0,index:0,answers:{},started:true,finished:false};selection=[];save();show(true);}},'button primary'));
+ } else {
+   renderQuestion();
+ }
+ if (focus) elements.screen.querySelector('h2').focus();
+}
+function openStage(stage) {
+ const index = stages[stage][2].findIndex((_,i)=>!state.answers[stage+'-'+i]);
+ state = {...state,stage,index:Math.max(0,index),started:true,finished:false};
+ selection=[]; save(); show(true);
+}
+function renderQuestion() {
+ const [name,description,questions] = stages[state.stage];
+ const question = questions[state.index];
+ const previous = state.answers[questionId()];
+ const selected = previous?.selection ?? selection;
+ const isOrder = question.type === 'Хронология';
+ const isMultiple = question.type === 'Несколько ответов';
+ elements.screen.innerHTML = '<div class="eyebrow">'+name+' · '+(state.index+1)+' из '+questions.length+'</div><p class="muted">'+description+'</p><h2 tabindex="-1">'+question.prompt+'</h2><p class="muted">'+question.type+(isOrder?' · Нажимайте на события по порядку. Повторное нажатие убирает событие.':isMultiple?' · Отметьте все подходящие варианты.':'')+'</p><div class="answers"></div><div class="feedback" role="status"></div><div class="toolbar"></div>';
+ const answers = elements.screen.querySelector('.answers');
+ const feedback = elements.screen.querySelector('.feedback');
+ const toolbar = elements.screen.querySelector('.toolbar');
+ const correctOptions = Array.isArray(question.key)?question.key:[question.key];
+ function refresh() {
+   [...answers.children].forEach((item,i)=>{
+     const rank = selected.indexOf(i);
+     item.textContent = (isOrder&&rank>=0?(rank+1)+'. ':'')+question.options[i];
+     item.setAttribute('aria-pressed', String(rank>=0));
+     item.classList.toggle('chosen',rank>=0);
+     if(previous) {
+       item.disabled=true;
+       if(!isOrder && correctOptions.includes(i)) item.classList.add('good');
+       if(!isOrder && rank>=0 && !correctOptions.includes(i)) item.classList.add('bad');
+     }
+   });
+   check.disabled = selected.length===0 || (isOrder && selected.length!==question.options.length);
+ }
+ function submit() {
+   const correct = isOrder ? correctOptions.every((value,i)=>selected[i]===value) : correctOptions.length===selected.length && correctOptions.every(value=>selected.includes(value));
+   state.answers[questionId()]={selection:[...selected],correct};
+   save(); show();
+   elements.screen.querySelector('.feedback').focus();
+ }
+ const check = button('Проверить',submit,'button primary');
+ question.options.forEach((option,i)=>{
+   answers.append(button(option,()=>{
+     const index = selection.indexOf(i);
+     if (!isOrder&&!isMultiple) {selection.splice(0,selection.length,i);}
+     else if(index>=0) {selection.splice(index,1);}
+     else {selection.push(i);}
+     refresh();
+   },'button answer'));
+ });
+ if (previous) {
+   feedback.tabIndex=-1;
+   feedback.innerHTML='<strong>'+(previous.correct?'Верно.':'Ответ можно уточнить.')+'</strong> '+question.note+'<br>'+link(question.source);
+   toolbar.append(button(state.index<questions.length-1?'Следующее задание':answered()===total?'Посмотреть итоги':'Дальше по маршруту',advance,'button primary'));
+ } else {
+   toolbar.append(check);
+ }
+ if (state.index>0) toolbar.append(button('Предыдущее задание',()=>move(state.index-1)));
+ refresh();
+}
+function move(index) {state.index=index;selection=[];save();show(true);}
+function finish() {state.finished=true;save();show(true);}
+function advance() {
+ if(state.index+1<stages[state.stage][2].length) {move(state.index+1);return;}
+ if(answered()===total){finish();return;}
+ const next = stages.findIndex((_,i)=>i>state.stage&&stages[i][2].some((_,j)=>!state.answers[i+'-'+j]));
+ openStage(next>=0?next:stages.findIndex((stage,i)=>stage[2].some((_,j)=>!state.answers[i+'-'+j])));
+}
+elements.result.onclick=finish;
+elements.start.onclick=()=>{if(!state.started){state.started=true;save();}show(true);elements.quest.scrollIntoView({block:'start'});};
+show();
+</script>
+</html>
