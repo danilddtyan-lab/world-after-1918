@@ -1,23 +1,126 @@
 <!doctype html>
 <html lang="ru">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Исторический квест для 10–11 классов о мире после Первой мировой войны">
-<title>Мир после Первой мировой войны</title>
-<style>
-:root{color-scheme:light;--bg:#f3f4fa;--panel:#fff;--line:#dce0eb;--paper:#282931;--muted:#595d69;--orange:#ae3e00;--blue:#365fee;--blue-hover:#244bd3;--blue-tint:#edf1ff;--green:#26613a;--red:#9b3723}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--paper);font:1rem/1.55 system-ui,sans-serif}button,a{color:inherit}button{font:inherit;cursor:pointer}button:disabled{cursor:default}button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:4px}
-.shell{max-width:1140px;margin:auto;padding:0 28px}header{background:var(--panel);border-bottom:1px solid var(--line)}.top{display:flex;justify-content:space-between;align-items:center;gap:1rem;min-height:64px}.brand{font-weight:750}.tag,.eyebrow{color:var(--orange);font:700 .9rem/1.5 system-ui;letter-spacing:.07em}.tag{letter-spacing:0}
-.hero{min-height:390px;display:grid;align-items:center;padding:55px 0 42px;background:radial-gradient(ellipse at 82% 42%,#e5eaff,transparent 65%)}h1,h2{font-family:Georgia,serif;font-weight:500;line-height:1.08;margin:.25em 0}h1{font-size:clamp(2.65rem,7vw,5.3rem);max-width:900px;text-wrap:balance}h2{font-size:clamp(1.6rem,3vw,2.4rem)}p{margin:.7em 0}.hero p{max-width:650px;color:var(--muted);font-size:1.1rem}.button{border:1px solid var(--line);border-radius:7px;background:transparent;padding:.65rem 1rem;min-height:44px}.primary{background:var(--blue);color:#fff;border-color:transparent;font-weight:750}.primary:hover{background:var(--blue-hover)}.layout{display:grid;grid-template-columns:270px 1fr;gap:24px;padding-top:25px;padding-bottom:35px}.box{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:clamp(16px,3vw,28px)}aside{align-self:start}aside h2{font-size:1.4rem}progress{width:100%;accent-color:var(--blue)}.muted{color:var(--muted)}nav{display:grid;gap:7px;margin:16px 0}nav button,.answer{text-align:left}.step{display:flex;justify-content:space-between;gap:10px}.active,.answer:not(:disabled):hover{border-color:var(--blue);background:var(--blue-tint)}.answers{display:grid;gap:9px;margin:1.25rem 0}.answer{background:#f7f8fc}.good{border-color:var(--green);color:var(--green);background:#e9f6e5}.bad{border-color:var(--red);color:var(--red);background:#fff0e8}.chosen:not(:disabled){border-color:var(--blue);background:var(--blue-tint)}.toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.feedback{padding:12px 15px;border-left:3px solid #f87934;background:#fff3e7;margin:14px 0}.feedback:empty{display:none}footer{padding-bottom:35px}summary{cursor:pointer;color:var(--orange)}a{text-underline-offset:.2em}.intro-list{padding-left:1.3rem}.intro-list li{margin:.5rem 0}[hidden]{display:none!important}
-@media(max-width:730px){.layout{grid-template-columns:1fr}.shell{padding-left:16px;padding-right:16px}.hero{min-height:0;padding:34px 0}.top{min-height:54px}}
-</style>
-<header><div class="shell top"><span class="brand">Исторический квест</span><span class="tag">10–11 классы</span></div></header>
-<section class="hero"><div class="shell"><div class="eyebrow">1918–1923</div><h1>Мир после Первой мировой войны</h1><p>Новые границы и конфликты. Проследите путь от перемирия до Лозаннского договора и выясните, как решения дипломатов изменили карту Европы и Ближнего Востока.</p><button class="button primary" id="start">Начать квест</button></div></section>
-<main class="shell layout" id="quest">
-<aside class="box"><h2>Маршрут</h2><label for="progress" id="counter">Выполнено 0 из 30</label><progress id="progress" max="30" value="0"></progress><nav id="route" aria-label="Этапы квеста"></nav><button id="result" class="button" hidden>Итоги квеста</button></aside>
-<section class="box" id="screen" aria-label="Задание"></section>
-</main>
-<footer class="shell"><details class="box"><summary>Источники и цель квеста</summary><p>Тема выбрана потому, что несколько мирных договоров легко перепутать, а границы менялись и на переговорах, и вследствие новых войн. Цель квеста — связать договоры с государствами, территориями и последствиями.</p><ul id="sources"></ul></details></footer>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Исторический квест для 10–11 классов о мире после Первой мировой войны">
+  <title>Мир после Первой мировой войны</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --blue: #365fee;
+      --blue-light: #edf1ff;
+      --orange: #ae3e00;
+      --line: #dce0eb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      background: #f3f4fa;
+      color: #282931;
+      font: 1rem/1.55 system-ui, sans-serif;
+    }
+
+    .card {
+      margin-bottom: 16px;
+      padding: clamp(16px, 4vw, 26px);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+    }
+
+    h1, h2 { margin: 0 0 12px; line-height: 1.15; }
+    h1 { font-size: clamp(1.9rem, 5vw, 2.75rem); }
+    .eyebrow, summary { color: var(--orange); font-weight: 700; }
+    .muted { color: #595d69; }
+
+    button {
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f7f8fc;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:disabled { cursor: default; }
+    :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+    .primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: white;
+      font-weight: 700;
+    }
+
+    .primary:disabled { opacity: .65; }
+
+    .active, .chosen:not(:disabled), .answer:not(:disabled):hover {
+      border-color: var(--blue);
+      background: var(--blue-light);
+    }
+
+    progress {
+      display: block;
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    nav, .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+    nav { margin-top: 12px; }
+    .toolbar { margin-top: 16px; }
+    #result { margin-top: 12px; }
+
+    .answers { display: grid; gap: 8px; margin: 16px 0; }
+    .answer { text-align: left; }
+    .good { background: #e9f6e5; border-color: #26613a; color: #26613a; }
+    .bad { background: #fff0e8; border-color: #9b3723; color: #9b3723; }
+
+    .feedback {
+      padding: 12px;
+      border-left: 3px solid #f87934;
+      background: #fff3e7;
+    }
+
+    .feedback:empty { display: none; }
+    summary { cursor: pointer; }
+    a { color: #244bd3; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <header class="card">
+    <p class="eyebrow">Исторический квест · 10–11 классы</p>
+    <h1>Мир после Первой мировой войны</h1>
+    <p>Новые границы и конфликты 1918–1923 годов. Проследите, как мирные договоры изменили карту Европы и Ближнего Востока.</p>
+    <button id="start" class="primary">Начать квест</button>
+  </header>
+
+  <main id="quest">
+    <section class="card" aria-labelledby="route-title">
+      <h2 id="route-title">Маршрут</h2>
+      <label id="counter" for="progress">Выполнено 0 из 30</label>
+      <progress id="progress" max="30" value="0"></progress>
+      <nav id="route" aria-label="Этапы квеста"></nav>
+      <button id="result" hidden>Итоги квеста</button>
+    </section>
+
+    <section id="screen" class="card" aria-label="Задание"></section>
+  </main>
+
+  <footer class="card">
+    <details>
+      <summary>Источники и цель квеста</summary>
+      <p>Послевоенные договоры легко перепутать. Квест помогает связать их с государствами, территориями и последствиями.</p>
+      <ul id="sources"></ul>
+    </details>
+  </footer>
+
 <script>
 'use strict';
 const sources = [
@@ -88,7 +191,7 @@ const questionId = () => state.stage+'-'+state.index;
 const save = () => { try {localStorage.setItem(key,JSON.stringify(state));} catch {} };
 const link = (source) => '<a href="'+sources[source][1]+'">'+sources[source][0]+'</a>';
 elements.sources.innerHTML = sources.map((_,i)=>'<li>'+link(i)+'</li>').join('');
-function button(label, action, className='button') {
+function button(label, action, className='') {
  const item = document.createElement('button');
  item.type = 'button';
  item.className = className;
@@ -103,7 +206,7 @@ function update() {
  elements.result.hidden = answered() !== total;
  elements.route.replaceChildren(...stages.map(([name,,questions],i)=>{
    const count = questions.filter((_,j)=>state.answers[i+'-'+j]).length;
-   const item = button((i+1)+'. '+name+' · '+count+'/'+questions.length,()=>openStage(i), 'button'+(state.started&&!state.finished&&state.stage===i?' active':''));
+   const item = button((i+1)+'. '+name+' · '+count+'/'+questions.length,()=>openStage(i), (state.started&&!state.finished&&state.stage===i?'active':''));
    if(state.started&&!state.finished&&state.stage===i) item.setAttribute('aria-current','step');
    return item;
  }));
@@ -114,8 +217,8 @@ function show(focus=false) {
    elements.screen.innerHTML = '<div class="eyebrow">30 заданий</div><h2 tabindex="-1">Как проходить квест</h2><p>Выберите этап и отвечайте на вопросы. После проверки появится объяснение и ссылка на источник.</p><p class="muted">За правильный ответ начисляется один балл. Можно возвращаться к любому этапу. Прогресс сохраняется в этом браузере.</p>';
  } else if (state.finished) {
    const score = Object.values(state.answers).filter(answer=>answer.correct).length;
-   elements.screen.innerHTML = '<div class="eyebrow">Квест завершён</div><h2 tabindex="-1">'+score+' из '+total+' баллов</h2><p>Послевоенный порядок складывался несколько лет. Версаль задал условия мира с Германией, другие договоры определили новые границы, а Лига Наций стала площадкой для сотрудничества. Рижский и Лозаннский договоры показывают, что некоторые конфликты продолжались после 1918 года.</p><ul class="intro-list">'+stages.map(([name,,qs],i)=>'<li>'+name+' · '+qs.filter((_,j)=>state.answers[i+'-'+j]?.correct).length+' из '+qs.length+'</li>').join('')+'</ul>';
-   elements.screen.append(button('Пройти заново',()=>{if(confirm('Начать заново? Текущий результат будет сброшен.')){state={stage:0,index:0,answers:{},started:true,finished:false};selection=[];save();show(true);}},'button primary'));
+   elements.screen.innerHTML = '<div class="eyebrow">Квест завершён</div><h2 tabindex="-1">'+score+' из '+total+' баллов</h2><p>Послевоенный порядок складывался несколько лет. Версаль задал условия мира с Германией, другие договоры определили новые границы, а Лига Наций стала площадкой для сотрудничества. Рижский и Лозаннский договоры показывают, что некоторые конфликты продолжались после 1918 года.</p><ul>'+stages.map(([name,,qs],i)=>'<li>'+name+' · '+qs.filter((_,j)=>state.answers[i+'-'+j]?.correct).length+' из '+qs.length+'</li>').join('')+'</ul>';
+   elements.screen.append(button('Пройти заново',()=>{if(confirm('Начать заново? Текущий результат будет сброшен.')){state={stage:0,index:0,answers:{},started:true,finished:false};selection=[];save();show(true);}},'primary'));
  } else {
    renderQuestion();
  }
@@ -158,7 +261,7 @@ function renderQuestion() {
    save(); show();
    elements.screen.querySelector('.feedback').focus();
  }
- const check = button('Проверить',submit,'button primary');
+ const check = button('Проверить',submit,'primary');
  question.options.forEach((option,i)=>{
    answers.append(button(option,()=>{
      const index = selection.indexOf(i);
@@ -166,12 +269,12 @@ function renderQuestion() {
      else if(index>=0) {selection.splice(index,1);}
      else {selection.push(i);}
      refresh();
-   },'button answer'));
+   },'answer'));
  });
  if (previous) {
    feedback.tabIndex=-1;
    feedback.innerHTML='<strong>'+(previous.correct?'Верно.':'Ответ можно уточнить.')+'</strong> '+question.note+'<br>'+link(question.source);
-   toolbar.append(button(state.index<questions.length-1?'Следующее задание':answered()===total?'Посмотреть итоги':'Дальше по маршруту',advance,'button primary'));
+   toolbar.append(button(state.index<questions.length-1?'Следующее задание':answered()===total?'Посмотреть итоги':'Дальше по маршруту',advance,'primary'));
  } else {
    toolbar.append(check);
  }
@@ -190,4 +293,5 @@ elements.result.onclick=finish;
 elements.start.onclick=()=>{if(!state.started){state.started=true;save();}show(true);elements.quest.scrollIntoView({block:'start'});};
 show();
 </script>
+</body>
 </html>
